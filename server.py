@@ -28,7 +28,7 @@ class Server(Thread):
         self.global_model_path = './save/{}{}-{}_seed{}_w{}v{}_E{}e{}b{}lr{}_{}-C{}/'.format(
                 args.dataset[:5], args.data_allocation_scheme, 
                 args.model, args.manual_seed, 
-                args.num_workers, args.num_validators,
+                args.num_clients, args.num_servers,
                 args.maximum_round_index, args.local_ep, args.local_bs, args.lr,  
                 args.protocol,
                 args.frac
@@ -46,17 +46,21 @@ class Server(Thread):
         print(self.net)
         self.SaveGlobalModel(self.net.state_dict())
         
-        self.workerKeys = range(args.num_workers)
+        self.workerKeys = range(args.num_clients)
         
     
     def run(self):
         # keep checking task status
         while True:
-            if len(self.tc.cached_local_update)==self.tc.args.num_workers*self.tc.args.frac:
+            if len(self.tc.cached_local_update)==self.tc.args.num_clients*self.tc.args.frac:
                 torch.cuda.empty_cache()
                 self.workflow()
                 torch.cuda.empty_cache()
                 self.tc.cached_local_update =dict()
+                self.tc.active_worker = np.random.choice(
+                    range(self.tc.args.num_clients),
+                    int(self.tc.args.num_clients*self.tc.args.frac),
+                    replace= False)
                 self.version_tag += 1     
                 print("new round %s..."%self.version_tag)
             else:
@@ -167,7 +171,7 @@ class Server(Thread):
         if self.tc.args.dataset == 'shakespeare':
             del hidden
         torch.cuda.empty_cache()
-        accuracy= float(correct.item() / data_size)
+        accuracy= float(correct.item() / data_size)*100
         print('Round {} Test set: Accuracy: {}/{} ({:.2f}%)'.format(
              self.version_tag, correct.item(), data_size, accuracy))
         

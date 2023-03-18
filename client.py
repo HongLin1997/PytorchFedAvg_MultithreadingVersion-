@@ -27,7 +27,7 @@ class Client(Thread):
         self.global_model_path = './save/{}{}-{}_seed{}_w{}v{}_E{}e{}b{}lr{}_{}-C{}/'.format(
                 args.dataset[:5], args.data_allocation_scheme, 
                 args.model, args.manual_seed, 
-                args.num_workers, args.num_validators,
+                args.num_clients, args.num_servers,
                 args.maximum_round_index, args.local_ep, args.local_bs, args.lr,  
                 args.protocol,
                 args.frac
@@ -38,7 +38,8 @@ class Client(Thread):
     def run(self):
         # keep checking the task status
         while True:
-            if self.version_tag < self.tc.server.version_tag:
+            if self.version_tag < self.tc.server.version_tag and \
+            self.no in self.tc.active_worker :
                 try:
                     self.ldr_train,self.global_model = None, None
                 except:

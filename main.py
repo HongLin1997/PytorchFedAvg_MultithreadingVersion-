@@ -10,6 +10,7 @@ from utils.tools import init_random_seed
 from client import Client
 from server import Server
 import torch, time
+import numpy as np
 
 class Task(object):
     def __init__(self, args):
@@ -17,7 +18,9 @@ class Task(object):
         self.clients=dict()
         self.server = None
         self.cached_local_update = dict()
-        
+        self.active_worker = np.random.choice(range(self.args.num_clients),
+                                              int(self.args.num_clients*self.args.frac),
+                                              replace= False)
     def ReadWorkerList(self):
         return self.clients.keys()
     
@@ -30,7 +33,7 @@ class Task(object):
         
         ########################################################################
         
-        for no in range(self.args.num_workers):
+        for no in range(self.args.num_clients):
             self.clients[no] = Client(args=self.args, no=no, task = task)
         print('initializing client finished...')
         return
